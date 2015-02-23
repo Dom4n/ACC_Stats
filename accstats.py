@@ -16,10 +16,11 @@ oraz wyświetlanie wyników na wykresach
 '''
 
 from pandas import *  # do gryzienia danych
-from dateutil.relativedelta import *  # dokładne przeliczenia na datach
-# import numpy as np
-# import matplotlib.pyplot as plt
-import os, glob, time, datetime, re
+from bdateutil import *  # dokładne przeliczenia na datach, lepsze od zwykłego dateutil
+# import numpy as np  # do gryzienia danych, panda tez to importuje
+# import matplotlib.pyplot as plt  # do wykresów, jeszcze brak użycia
+import os, glob, time  # , datetime, re
+import sqlalchemy
 
 
 class Parsuj:
@@ -30,7 +31,7 @@ class Parsuj:
         self.parserlogfile(file)
 
     # zmienia folder
-    # TODO: może ścieżka jako argument? /kiedyś
+    # może ścieżka jako argument? /kiedyś
     def changedir(self, directory):
         os.chdir(directory)
         print(os.getcwd())
@@ -39,6 +40,8 @@ class Parsuj:
     # zazwyczaj plik ma datę o jeden dzień w przód!!
     def findfile(self):
         log = glob.glob('logfile_console*.log')
+        if len(log) == 0:
+            raise FileNotFoundError('BRAK PLIKU!')
         t = time.gmtime(os.path.getmtime(log[0]))
         t2 = time.strftime('%Y-%m-%d', t)
         plik = list([t2, log[0]])
@@ -53,15 +56,15 @@ class Parsuj:
         unikalne.sort()
         return unikalne
 
+    def zapiszdosql(self, data):
+        engine = sqlalchemy.create_engine('sqlite:///foo.db')
+        data.to_sql('data', engine, if_exists='append')
+
     # parser danych z logfile
-    # TODO: do generalnej przebudowy!!
     def parserlogfile(self, file):
         # data, nazwa_misji, mapa, długość_misji, ilość_graczy, lista_graczy
-        dane = DataFrame(columns=['data', 'nazwa_misji', 'mapa', 'dlugosc_misji',
-                                  'ilosc_graczy', 'lista_graczy'])
         plik = open(file[1], "r")
         lista_graczy = []
-        ilosc = 0
         dlugosc_misji = 0
         mapa = ''
         data = file[0]
@@ -70,7 +73,6 @@ class Parsuj:
         for line in plik:
 
             if 'Mission read' in line:
-                endtime = line[:8]
                 if not line.startswith('20'):
                     break
 
@@ -88,16 +90,17 @@ class Parsuj:
                 lista_graczy.append(gracz)
 
             if ('Game restarted' in line) or ('Game finished' in line):
-                endtime = line.split(' ')[0][:8]
+                endtime = line.split(' ')[0]
                 if endtime == '':
-                    endtime = line.split(' ')[1][:8]
+                    endtime = line.split(' ')[1]
                 endtime = time.strptime(endtime, '%H:%M:%S')
                 if dlugosc_misji > 0:
                     if (endtime.tm_hour + (dlugosc_misji / 3600) >= 24) or (endtime.tm_hour < 20):
                         data = data + relativedelta(days=-1)
-                        data = time.strftime('%Y %m %d', data.timetuple())
+                        data = time.strftime('%Y-%m-%d', data.timetuple())
 
         ilosc = len(lista_graczy)
+        lista_graczy = ''.join(lista_graczy)
         global d0
         d0 = {'data': data,
               'nazwa_misji': nazwa_misji,
@@ -118,52 +121,15 @@ class Parsuj:
 
         print(d0)
         print(dane)
-
-        # if (ilosc > 4 ) and (duration > 1):
-            # czas = time.gmtime(os.path.getmtime(file))
-            # if (czasepoch.tm_hour+duration >= 24):
-            #    czasepoch.tm_mday = czasepoch.tm_mday - 1
-
-            # gracze = uniq(gracze)
-            # ilosc = len(gracze)
-
-            # d1 = {'time':czas,
-            #     'duration':duration,
-            #   'misja':misja,
-            #  'ilosc':ilosc,
-            # 'gracze':[gracze]}
-
-            # alldata = alldata.append(DataFrame(d1, columns=['time','duration','misja','ilosc','gracze']))
-            # maks = onedata['duration'].idxmax()
-            # print(maks)
-            # onedata.loc[maks]
-            # alldata = alldata.append(onedata.loc[maks])
-
-        # maks = onedata['duration'].idxmax()
-        # print(maks)
-        # onedata.loc[maks]
-
-    # # Jakieś gówno
-    # def gowno(self):
-    #     czasepoch = os.path.getmtime(file)
-    #     czase2 = datetime.datetime.fromtimestamp(czasepoch)
-    #     print(czase2)
-    #     czase2 = czase2 + relativedelta(minutes=-duration)
-    #     print(czase2)
-    #     czase2
-    #
-    #     print(t1)
-    #     t3 = time.strptime(t1, '%H:%M:%S')
-    #     t3
-    #
-    #     czase2 - relativedelta(days=1)
+        self.zapiszdosql(dane)
 
 
-#class Wyswietl(object):
+
+# class Wyswietl(object):
 #    pass
 
-# TODO: jednak wszystko w jednym pliku, ta klasa parsuje plik logfile
-# Parsuj()
+# jednak wszystko w jednym pliku, ta klasa parsuje plik logfile
+Parsuj()
 
-# TODO: ta klasa bedzie zawierala wyswietlanie wynikow wedlug kryteriow
+# ta klasa bedzie zawierala wyswietlanie wynikow wedlug kryteriow
 # Wyswietl()
