@@ -4,23 +4,26 @@ __author__ = 'Doman'
 'PARSUJ' ma za zadanie parsować JEDEN plik logfile_console_XXXX.log,
 dane z niego wyciągnięte:
 data, nazwa_misji, mapa, długość_misji, ilość_graczy, lista_graczy
-dane te mają zostać zapisane w bazie danych (lub json?)
+dane te mają zostać zapisane w bazie danych SQLite3
 
-'WYSWIETL' ma pozwolić na otworzenie bazy danych (lub json)
+'WYSWIETL' ma pozwolić na otworzenie bazy danych
 i dowolne parsowanie danych po tych parametrach:
 - gracz -> w jakich dniach grał, zawężenie wyników
 - dzień/ilość graczy
 - dzień/długość misji
 - ...
 oraz wyświetlanie wyników na wykresach
+
+'BAZACLEANUP' - do oczyszczania bazy danych z takich samych wpisów,
+możliwe też, że będzie sortować baze według daty rozegrania misji
 '''
 
 from pandas import *  # do gryzienia danych
 from bdateutil import *  # dokładne przeliczenia na datach, lepsze od zwykłego dateutil
-# import numpy as np  # do gryzienia danych, panda tez to importuje
-# import matplotlib.pyplot as plt  # do wykresów, jeszcze brak użycia
 import os, glob, time  # , datetime, re
 import sqlalchemy
+# import numpy as np  # do gryzienia danych, panda tez to importuje
+# import matplotlib.pyplot as plt  # do wykresów, jeszcze brak użycia
 
 
 class Parsuj:
@@ -100,7 +103,7 @@ class Parsuj:
                         data = time.strftime('%Y-%m-%d', data.timetuple())
 
         ilosc = len(lista_graczy)
-        lista_graczy = ''.join(lista_graczy)
+        lista_graczy = ', '.join(lista_graczy)
         global d0
         d0 = {'data': data,
               'nazwa_misji': nazwa_misji,
@@ -124,12 +127,19 @@ class Parsuj:
         self.zapiszdosql(dane)
 
 
+class BazaCleanup(object):
+    pass
 
-# class Wyswietl(object):
-#    pass
+
+class Wyswietl(object):
+    pass
+
 
 # jednak wszystko w jednym pliku, ta klasa parsuje plik logfile
 Parsuj()
 
 # ta klasa bedzie zawierala wyswietlanie wynikow wedlug kryteriow
-# Wyswietl()
+Wyswietl()
+
+# cleanup bazy danych
+BazaCleanup()
