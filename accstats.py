@@ -1,7 +1,7 @@
 __author__ = 'Doman'
 
 '''
-'PARSUJ' ma za zadanie parsować JEDEN plik logfile_console_XXXX.log,
+'PARSUJ' parsuje jeden albo wiele plików logfile_console_XXXX.log,
 dane z niego wyciągnięte:
 data, nazwa_misji, mapa, długość_misji, ilość_graczy, lista_graczy
 dane te mają zostać zapisane w bazie danych SQLite3
@@ -14,8 +14,8 @@ i dowolne parsowanie danych po tych parametrach:
 - ...
 oraz wyświetlanie wyników na wykresach
 
-'BAZACLEANUP' - do oczyszczania bazy danych z takich samych wpisów,
-możliwe też, że będzie sortować baze według daty rozegrania misji
+'BAZACLEANUP' - tworzy główną bazę danych, wyczyszczoną z powtarzających się wpisów
+na podstawie czasu trwania misji, sortuje po datach rozegrania misji.
 '''
 
 from pandas import *  # do gryzienia danych
@@ -58,10 +58,11 @@ class Parsuj:
 
     def zapiszdosql(self, data):
         engine = sqlalchemy.create_engine('sqlite:///acc.db')
-        data.to_sql('data', engine, if_exists='append')
+        data.to_sql('stats', engine, if_exists='append')
 
     def dodataframe(self, data, nazwa_misji, mapa, dlugosc_misji, ilosc, lista_graczy):
         ilosc = len(lista_graczy)
+        lista_graczy.sort()
         lista_graczy = ', '.join(lista_graczy)
         global d0
         d0 = {'data': data,
@@ -134,15 +135,21 @@ class Parsuj:
                 data = t
                 nazwa_misji = ''
                 ilosc = 0
-                endtime = 0
 
         self.dodataframe(data, nazwa_misji, mapa, dlugosc_misji, ilosc, lista_graczy)
 
 
-
 # TODO: sortowanie bazy po datach
-class BazaCleanup(object):
-    pass
+def bazacleanup():
+    try:
+        engine = sqlalchemy.create_engine('sqlite:///acc.db')
+        data = read_sql_table('stats', engine)
+        data.sort(columns='data', inplace=True)
+        del data['index']
+        data.drop_duplicates(subset='dlugosc_misji', inplace=True)
+        data.to_sql('statssort', engine, if_exists='replace')
+    except Exception as e:
+        print('blad w bazacleanup...  ', e)
 
 # TODO: wypis objektow z bazy wg podanych kryteriow, tworzenie wykresow
 class Wyswietl(object):
@@ -156,4 +163,4 @@ Parsuj()
 Wyswietl()
 
 # cleanup bazy danych
-BazaCleanup()
+bazacleanup()
