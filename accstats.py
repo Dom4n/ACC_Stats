@@ -97,7 +97,6 @@ class Parsuj:
         data = t
         nazwa_misji = ''
         ilosc = 0
-        next_game = False
 
         for line in plik:
 
@@ -135,10 +134,9 @@ class Parsuj:
                 data = t
                 nazwa_misji = ''
                 ilosc = 0
-                next_game = True
+                endtime = 0
 
-        if not next_game:
-            self.dodataframe(data, nazwa_misji, mapa, dlugosc_misji, ilosc, lista_graczy)
+        self.dodataframe(data, nazwa_misji, mapa, dlugosc_misji, ilosc, lista_graczy)
 
 
 
