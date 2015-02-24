@@ -151,16 +151,23 @@ def bazacleanup():
     except Exception as e:
         print('blad w bazacleanup...  ', e)
 
-# TODO: wypis objektow z bazy wg podanych kryteriow, tworzenie wykresow
-class Wyswietl(object):
-    pass
+
+# tworzy tabelę pokazującą, kiedy danych gracz był na misji
+def wyswietl(name):
+    engine = sqlalchemy.create_engine('sqlite:///acc.db')
+    data = read_sql_table('statssort', engine)
+    data = data[data['lista_graczy'].str.contains(name)]
+    data.to_sql('statswynik', engine, if_exists='replace')
 
 
 # jednak wszystko w jednym pliku, ta klasa parsuje plik logfile
 Parsuj()
 
-# ta klasa bedzie zawierala wyswietlanie wynikow wedlug kryteriow
-Wyswietl()
-
 # cleanup bazy danych
 bazacleanup()
+
+# ta klasa bedzie zawierala wyswietlanie wynikow wedlug kryteriow
+# jako parametr należy podać nick gracza
+wyswietl('GieNkoV')
+
+print('GOTOWE')
