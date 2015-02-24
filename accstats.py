@@ -28,16 +28,16 @@ import sqlalchemy
 
 class Parsuj:
     def __init__(self):
-        directory = 'C:/Users/Jarek/PycharmProjects/ACC Stats'
+        directory = 'C:/Users/Jarek/PycharmProjects/ACC Stats/LOGS'
         self.changedir(directory)
         file = self.findfile()
-        self.parserlogfile(file)
+        for x in file:
+            self.parserlogfile(x)
 
     # zmienia folder
     # może ścieżka jako argument? /kiedyś
     def changedir(self, directory):
         os.chdir(directory)
-        print(os.getcwd())
 
     # szuka zgodnego pliku
     # zazwyczaj plik ma datę o jeden dzień w przód!!
@@ -45,10 +45,7 @@ class Parsuj:
         log = glob.glob('logfile_console*.log')
         if len(log) == 0:
             raise FileNotFoundError('BRAK PLIKU!')
-        t = time.gmtime(os.path.getmtime(log[0]))
-        t2 = time.strftime('%Y-%m-%d', t)
-        plik = list([t2, log[0]])
-        return plik
+        return log
 
     # kasuje powtarzające się nazwy
     def uniq(self, wejscie):
@@ -60,23 +57,52 @@ class Parsuj:
         return unikalne
 
     def zapiszdosql(self, data):
-        engine = sqlalchemy.create_engine('sqlite:///foo.db')
+        engine = sqlalchemy.create_engine('sqlite:///acc.db')
         data.to_sql('data', engine, if_exists='append')
+
+    def dodataframe(self, data, nazwa_misji, mapa, dlugosc_misji, ilosc, lista_graczy):
+        ilosc = len(lista_graczy)
+        lista_graczy = ', '.join(lista_graczy)
+        global d0
+        d0 = {'data': data,
+              'nazwa_misji': nazwa_misji,
+              'mapa': mapa,
+              'dlugosc_misji': dlugosc_misji,
+              'ilosc_graczy': ilosc,
+              'lista_graczy': [lista_graczy]}
+        dane = DataFrame(d0, columns=['data',
+                                      'nazwa_misji',
+                                      'mapa',
+                                      'dlugosc_misji',
+                                      'ilosc_graczy',
+                                      'lista_graczy'])
+        if (ilosc > 4) and (dlugosc_misji > 300):
+            self.zapiszdosql(dane)
 
     # parser danych z logfile
     def parserlogfile(self, file):
         # data, nazwa_misji, mapa, długość_misji, ilość_graczy, lista_graczy
-        plik = open(file[1], "r")
+        t = time.gmtime(os.path.getmtime(file))
+        t2 = time.strftime('%H', t)
+        t = time.strftime('%Y-%m-%d', t)
+        odjete = False
+        if t2 == '06':
+            t = t + relativedelta(days=-1)
+            t = time.strftime('%Y-%m-%d', t.timetuple())
+            odjete = True
+        plik = open(file, "r", encoding='utf-8')
         lista_graczy = []
         dlugosc_misji = 0
         mapa = ''
-        data = file[0]
+        data = t
         nazwa_misji = ''
+        ilosc = 0
+        next_game = False
 
         for line in plik:
 
             if 'Mission read' in line:
-                if not line.startswith('20'):
+                if not line.startswith(('20', '21', '22', '23')):
                     break
 
             if 'mission=' in line:
@@ -97,40 +123,30 @@ class Parsuj:
                 if endtime == '':
                     endtime = line.split(' ')[1]
                 endtime = time.strptime(endtime, '%H:%M:%S')
-                if dlugosc_misji > 0:
-                    if (endtime.tm_hour + (dlugosc_misji / 3600) >= 24) or (endtime.tm_hour < 20):
-                        data = data + relativedelta(days=-1)
-                        data = time.strftime('%Y-%m-%d', data.timetuple())
+                if (endtime.tm_hour < 6) and not odjete:
+                    data = data + relativedelta(days=-1)
+                    data = time.strftime('%Y-%m-%d', data.timetuple())
 
-        ilosc = len(lista_graczy)
-        lista_graczy = ', '.join(lista_graczy)
-        global d0
-        d0 = {'data': data,
-              'nazwa_misji': nazwa_misji,
-              'mapa': mapa,
-              'dlugosc_misji': dlugosc_misji,
-              'ilosc_graczy': ilosc,
-              'lista_graczy': [lista_graczy]}
-        # dane = dane.
-        # onedata = onedata.append(
-        #     DataFrame(d0, columns=['time', 'duration', 'misja', 'ilosc', 'gracze'], index=[misja]))
-        # print(onedata)
-        dane = DataFrame(d0, columns=['data',
-                                      'nazwa_misji',
-                                      'mapa',
-                                      'dlugosc_misji',
-                                      'ilosc_graczy',
-                                      'lista_graczy'])
+            if 'Waiting for next game' in line:
+                self.dodataframe(data, nazwa_misji, mapa, dlugosc_misji, ilosc, lista_graczy)
+                lista_graczy = []
+                dlugosc_misji = 0
+                mapa = ''
+                data = t
+                nazwa_misji = ''
+                ilosc = 0
+                next_game = True
 
-        print(d0)
-        print(dane)
-        self.zapiszdosql(dane)
+        if not next_game:
+            self.dodataframe(data, nazwa_misji, mapa, dlugosc_misji, ilosc, lista_graczy)
 
 
+
+# TODO: sortowanie bazy po datach
 class BazaCleanup(object):
     pass
 
-
+# TODO: wypis objektow z bazy wg podanych kryteriow, tworzenie wykresow
 class Wyswietl(object):
     pass
 
