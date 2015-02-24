@@ -127,7 +127,7 @@ class Parsuj:
                     data = data + relativedelta(days=-1)
                     data = time.strftime('%Y-%m-%d', data.timetuple())
 
-            if 'Waiting for next game' in line:
+            if 'class Session' in line:
                 self.dodataframe(data, nazwa_misji, mapa, dlugosc_misji, ilosc, lista_graczy)
                 lista_graczy = []
                 dlugosc_misji = 0
@@ -147,7 +147,7 @@ def bazacleanup():
         data.sort(columns='data', inplace=True)
         del data['index']
         data.drop_duplicates(subset='dlugosc_misji', inplace=True)
-        data.to_sql('statssort', engine, if_exists='replace')
+        data.to_sql('stats', engine, if_exists='replace')
     except Exception as e:
         print('blad w bazacleanup...  ', e)
 
@@ -155,8 +155,9 @@ def bazacleanup():
 # tworzy tabelę pokazującą, kiedy danych gracz był na misji
 def wyswietl(name):
     engine = sqlalchemy.create_engine('sqlite:///acc.db')
-    data = read_sql_table('statssort', engine)
-    data = data[data['lista_graczy'].str.contains(name)]
+    data = read_sql_table('stats', engine)
+    name = name.lower()
+    data = data[data['lista_graczy'].str.lower().str.contains(name)]
     data.to_sql('statswynik', engine, if_exists='replace')
 
 
@@ -168,6 +169,6 @@ bazacleanup()
 
 # ta klasa bedzie zawierala wyswietlanie wynikow wedlug kryteriow
 # jako parametr należy podać nick gracza
-wyswietl('GieNkoV')
+wyswietl('tomeek')
 
 print('GOTOWE')
