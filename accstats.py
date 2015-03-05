@@ -22,9 +22,12 @@ from pandas import *  # do gryzienia danych
 from bdateutil import *  # dokładne przeliczenia na datach, lepsze od zwykłego dateutil
 import os, glob, time  # , datetime, re
 import sqlalchemy
+from bokeh.plotting import figure, output_file, show, VBox
 # import numpy as np  # do gryzienia danych, panda tez to importuje
 # import matplotlib.pyplot as plt  # do wykresów, jeszcze brak użycia
 
+
+engine = sqlalchemy.create_engine('sqlite:///acc.db')
 
 class Parsuj:
     def __init__(self):
@@ -57,7 +60,6 @@ class Parsuj:
         return unikalne
 
     def zapiszdosql(self, data):
-        engine = sqlalchemy.create_engine('sqlite:///acc.db')
         data.to_sql('stats', engine, if_exists='append')
 
     def dodataframe(self, data, nazwa_misji, mapa, dlugosc_misji, ilosc, lista_graczy):
@@ -87,7 +89,7 @@ class Parsuj:
         t2 = time.strftime('%H', t)
         t = time.strftime('%Y-%m-%d', t)
         odjete = False
-        if t2 == '06':
+        if int(t2) <= 7:
             t = t + relativedelta(days=-1)
             t = time.strftime('%Y-%m-%d', t.timetuple())
             odjete = True
@@ -139,14 +141,17 @@ class Parsuj:
         self.dodataframe(data, nazwa_misji, mapa, dlugosc_misji, ilosc, lista_graczy)
 
 
-# TODO: sortowanie bazy po datach
+def print_full(x):
+    set_option('display.max_rows', len(x))
+    print(x)
+    reset_option('display.max_rows')
+
 def bazacleanup():
     try:
-        engine = sqlalchemy.create_engine('sqlite:///acc.db')
         data = read_sql_table('stats', engine)
-        data.sort(columns='data', inplace=True)
-        del data['index']
         data.drop_duplicates(subset='dlugosc_misji', inplace=True)
+        data.sort(columns=['data', 'ilosc_graczy'], inplace=True)
+        del data['index']
         data.to_sql('stats', engine, if_exists='replace')
     except Exception as e:
         print('blad w bazacleanup...  ', e)
@@ -154,12 +159,70 @@ def bazacleanup():
 
 # tworzy tabelę pokazującą, kiedy danych gracz był na misji
 def wyswietl(name):
-    engine = sqlalchemy.create_engine('sqlite:///acc.db')
-    data = read_sql_table('stats', engine)
-    name = name.lower()
-    data = data[data['lista_graczy'].str.lower().str.contains(name)]
-    data.to_sql('statswynik', engine, if_exists='replace')
+    for x in name:
+        data = read_sql_table('stats', engine)
+        data.drop_duplicates(subset='data', take_last=True, inplace=True)
+        x = x.lower()
+        data = data[data['lista_graczy'].str.lower().str.contains(x)]
+    print_full(data)
+        # gracze = {'gracz': name,
+        #           'ilosc': len(data.index)}
+        # df_gracze = DataFrame(gracze, columns=['gracz',
+        #                                        'ilosc'])
+        # print('[m=', name, ']', ' bral udzial w ', len(data.index), ' misjach', sep='')
+        # # data.to_sql('statswynik', engine, if_exists='replace')
 
+
+def wyswietl_wszystkich():
+    data = read_sql_table('stats', engine)
+    data.drop_duplicates(subset='data', take_last=True, inplace=True)
+    names = []
+    for x in data.index:
+        names += data.loc[x]['lista_graczy'].split(", ")
+    names = unique(names)
+    df_gracze = DataFrame(columns=['gracz', 'ilosc'])
+    for name in names:
+        gracz = data[data['lista_graczy'].str.contains(name)]
+        gracz = {'gracz': name,
+                 'ilosc': len(gracz.index)}
+        df_gracze = df_gracze.append(gracz, ignore_index=True)
+    df_gracze = df_gracze.sort(columns=['ilosc'], ascending=False)
+    for x in df_gracze.index:
+        print('[m=', df_gracze.loc[x][0], ']', ' wzial udzial w ', int(df_gracze.loc[x][1]), ' rozgrywkach.', sep='')
+
+    print(df_gracze['gracz'])
+
+    # gracze.sort(columns=['data', 'ilosc_graczy'], inplace=True)
+        # print('[m=', name, ']', ' bral udzial w ', len(gracze.index), ' misjach', sep='')
+
+
+        # data = data[data['lista_graczy'].str.lower().str.contains(name)]
+        # data.drop_duplicates(subset='data', take_last=True, inplace=True)
+        # print(name, ' bral udzial w tych misjach: ', len(data.index))
+        # data.to_sql('statswynik', engine, if_exists='replace')
+
+
+def graf():
+    data = read_sql_table('stats', engine, parse_dates={'data', '%Y-%m-%d'}, columns=['data', 'ilosc_graczy'])
+    data.drop_duplicates(subset='data', take_last=True, inplace=True)
+    # data.plot(kind='bar')
+    # print(data)
+    try:
+        p1 = figure(title="Stocks",
+                    x_axis_label="Data",
+                    y_axis_label="Graczy")
+        p1.line(
+            data['data'],  # x coordinates
+            data['ilosc_graczy'],  # y coordinates
+            color='#A6CEE3',  # set a color for the line
+            legend='AAPL',  # attach a legend label
+        )
+        p1.title = 'Ilosc graczy na rozgrywkach ACC'
+        p1.grid.grid_line_alpha = 0.3
+
+        show(VBox(p1))
+    except Exception as e:
+        print('bokeh: ', e)
 
 # jednak wszystko w jednym pliku, ta klasa parsuje plik logfile
 Parsuj()
@@ -167,8 +230,15 @@ Parsuj()
 # cleanup bazy danych
 bazacleanup()
 
+# wyswietla wszystkich graczy z bazy oraz ilosc rozgrywek w ktorych wzieli udzial
+wyswietl_wszystkich()
+
 # ta klasa bedzie zawierala wyswietlanie wynikow wedlug kryteriow
 # jako parametr należy podać nick gracza
-wyswietl('tomeek')
+wyswietl(['mariusz'])
+
+
+# tworzenie grafów
+# graf()
 
 print('GOTOWE')
