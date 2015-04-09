@@ -28,10 +28,12 @@ from bokeh.plotting import figure, output_file, show, VBox
 
 
 engine = sqlalchemy.create_engine('sqlite:///acc.db')
+set_option('display.width', 3000)
+set_option('display.max_colwidth', 1000)
 
 class Parsuj:
     def __init__(self):
-        directory = 'C:/Users/Jarek/PycharmProjects/ACC Stats/LOGS'
+        directory = 'F:/LOGS'
         self.changedir(directory)
         file = self.findfile()
         for x in file:
@@ -164,7 +166,9 @@ def wyswietl(name):
         data.drop_duplicates(subset='data', take_last=True, inplace=True)
         x = x.lower()
         data = data[data['lista_graczy'].str.lower().str.contains(x)]
+    del data['index']
     print_full(data)
+    print(data.to_html(index=False))
         # gracze = {'gracz': name,
         #           'ilosc': len(data.index)}
         # df_gracze = DataFrame(gracze, columns=['gracz',
@@ -235,7 +239,7 @@ wyswietl_wszystkich()
 
 # ta klasa bedzie zawierala wyswietlanie wynikow wedlug kryteriow
 # jako parametr należy podać nick gracza
-wyswietl(['mariusz'])
+wyswietl(['maras'])
 
 
 # tworzenie grafów
