@@ -28,12 +28,12 @@ from bokeh.plotting import figure, output_file, show, VBox
 
 
 engine = sqlalchemy.create_engine('sqlite:///acc.db')
-set_option('display.width', 3000)
-set_option('display.max_colwidth', 1000)
+set_option('expand_frame_repr', False)
+set_option('max_colwidth',2000)
 
 class Parsuj:
     def __init__(self):
-        directory = 'F:/LOGS'
+        directory = 'C:/Users/Jarek/PycharmProjects/ACC Stats/LOGS'
         self.changedir(directory)
         file = self.findfile()
         for x in file:
@@ -166,9 +166,13 @@ def wyswietl(name):
         data.drop_duplicates(subset='data', take_last=True, inplace=True)
         x = x.lower()
         data = data[data['lista_graczy'].str.lower().str.contains(x)]
-    del data['index']
-    print_full(data)
-    print(data.to_html(index=False))
+        del data['index']
+        print('Wyświetlam wyniki dla: ', name[0])
+        print(data)
+    #print(data.to_csv(columns=['data', 'nazwa_misji', 'mapa',
+    #                           'dlugosc_misji', 'ilosc_graczy', 'lista_graczy'],
+    #                  sep='\t', index=False))
+    # print(data)
         # gracze = {'gracz': name,
         #           'ilosc': len(data.index)}
         # df_gracze = DataFrame(gracze, columns=['gracz',
@@ -239,7 +243,7 @@ wyswietl_wszystkich()
 
 # ta klasa bedzie zawierala wyswietlanie wynikow wedlug kryteriow
 # jako parametr należy podać nick gracza
-wyswietl(['maras'])
+wyswietl(['mariusz'])
 
 
 # tworzenie grafów
