@@ -167,7 +167,7 @@ def wyswietl(name):
         data.drop_duplicates(subset='data', take_last=True, inplace=True)
         x = x.lower()
         data = data[data['lista_graczy'].str.lower().str.contains(x)]
-        # del data['index']
+        del data['index']
         htmlf = data.to_html(index=False)
         with open(x+'.html', mode='w', encoding='utf-8') as file:
             print('tworze plik '+x+'.html')
