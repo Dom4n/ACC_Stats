@@ -28,12 +28,13 @@ from bokeh.plotting import figure, output_file, show, VBox
 
 
 engine = sqlalchemy.create_engine('sqlite:///acc.db')
-set_option('expand_frame_repr', False)
-set_option('max_colwidth',2000)
+set_option('display.width', 3000)
+set_option('display.max_colwidth', 1000)
 
 class Parsuj:
     def __init__(self):
-        directory = 'C:/Users/Jarek/PycharmProjects/ACC Stats/LOGS'
+        directory = 'F:/LOGS'
+        # directory = 'F:/LOGS/STARE/20150302'
         self.changedir(directory)
         file = self.findfile()
         for x in file:
@@ -166,19 +167,11 @@ def wyswietl(name):
         data.drop_duplicates(subset='data', take_last=True, inplace=True)
         x = x.lower()
         data = data[data['lista_graczy'].str.lower().str.contains(x)]
-        del data['index']
-        print('Wyświetlam wyniki dla: ', name[0])
-        print(data)
-    #print(data.to_csv(columns=['data', 'nazwa_misji', 'mapa',
-    #                           'dlugosc_misji', 'ilosc_graczy', 'lista_graczy'],
-    #                  sep='\t', index=False))
-    # print(data)
-        # gracze = {'gracz': name,
-        #           'ilosc': len(data.index)}
-        # df_gracze = DataFrame(gracze, columns=['gracz',
-        #                                        'ilosc'])
-        # print('[m=', name, ']', ' bral udzial w ', len(data.index), ' misjach', sep='')
-        # # data.to_sql('statswynik', engine, if_exists='replace')
+        # del data['index']
+        htmlf = data.to_html(index=False)
+        with open(x+'.html', mode='w', encoding='utf-8') as file:
+            print('tworze plik '+x+'.html')
+            file.write(htmlf)
 
 
 def wyswietl_wszystkich():
@@ -194,20 +187,12 @@ def wyswietl_wszystkich():
         gracz = {'gracz': name,
                  'ilosc': len(gracz.index)}
         df_gracze = df_gracze.append(gracz, ignore_index=True)
-    df_gracze = df_gracze.sort(columns=['ilosc'], ascending=False)
+    df_gracze = df_gracze.sort(columns=['gracz'], ascending=True)
     for x in df_gracze.index:
         print('[m=', df_gracze.loc[x][0], ']', ' wzial udzial w ', int(df_gracze.loc[x][1]), ' rozgrywkach.', sep='')
 
-    print(df_gracze['gracz'])
-
-    # gracze.sort(columns=['data', 'ilosc_graczy'], inplace=True)
-        # print('[m=', name, ']', ' bral udzial w ', len(gracze.index), ' misjach', sep='')
-
-
-        # data = data[data['lista_graczy'].str.lower().str.contains(name)]
-        # data.drop_duplicates(subset='data', take_last=True, inplace=True)
-        # print(name, ' bral udzial w tych misjach: ', len(data.index))
-        # data.to_sql('statswynik', engine, if_exists='replace')
+    #print(df_gracze['gracz'])
+    return df_gracze['gracz']
 
 
 def graf():
@@ -239,11 +224,11 @@ Parsuj()
 bazacleanup()
 
 # wyswietla wszystkich graczy z bazy oraz ilosc rozgrywek w ktorych wzieli udzial
-wyswietl_wszystkich()
+wszyscy = wyswietl_wszystkich()
 
 # ta klasa bedzie zawierala wyswietlanie wynikow wedlug kryteriow
 # jako parametr należy podać nick gracza
-wyswietl(['mariusz'])
+wyswietl(wszyscy)
 
 
 # tworzenie grafów
