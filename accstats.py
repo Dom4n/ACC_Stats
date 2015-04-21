@@ -168,8 +168,10 @@ def wyswietl(name):
         x = x.lower()
         data = data[data['lista_graczy'].str.lower().str.contains(x)]
         del data['index']
-        htmlf = data.to_html(index=False)
-        with open(x+'.html', mode='w', encoding='utf-8') as file:
+        htmlf = '<head><meta charset="UTF-8"></head> \n'
+        htmlf += '<font size="6">'+x+' wzial udzial w '+str(data.count()[1])+' rozgrywkach.\n\n<br><br></font>'
+        htmlf += data.to_html(index=False)
+        with open('html/'+x+'.html', mode='w', encoding='utf-8') as file:
             print('tworze plik '+x+'.html')
             file.write(htmlf)
 
