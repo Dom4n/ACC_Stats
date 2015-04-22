@@ -222,7 +222,7 @@ def graf():
 
 
 def ftpupload(ok):
-    if ok == True:
+    if ok:
         accftp.upload()
 
 

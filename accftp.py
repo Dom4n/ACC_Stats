@@ -15,7 +15,7 @@ def upload():
     if len(pliki) == 0:
         raise FileNotFoundError('BRAK PLIKOW!!!')
 
-    with ftputil.FTPHost(s.ftp, s.ftp_login, s.ftp_pass) as ftp_host:
+    with ftputil.FTPHost(s.ftp_host, s.ftp_login, s.ftp_pass) as ftp_host:
         for x in pliki:
             isok = ftp_host.upload_if_newer(x, ftp_host.curdir+'/all/'+x)
             if isok:
