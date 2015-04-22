@@ -25,7 +25,7 @@ def upload():
                 nieudane.append(x)
 
     if len(nieudane) == 0:
-        print('Nieprzeslane pliki:\n'+nieudane)
+        print('Nieprzeslane pliki:\n'+str(nieudane))
     else:
         print('Wszystkie pliki przeslane!')
     print('FTP -> KONIEC')
