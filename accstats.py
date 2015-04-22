@@ -23,13 +23,14 @@ from bdateutil import *  # dokładne przeliczenia na datach, lepsze od zwykłego
 import os, glob, time  # , datetime, re
 import sqlalchemy
 from bokeh.plotting import figure, output_file, show, VBox
+import accftp
 # import numpy as np  # do gryzienia danych, panda tez to importuje
 # import matplotlib.pyplot as plt  # do wykresów, jeszcze brak użycia
 
-
-engine = sqlalchemy.create_engine('sqlite:///acc.db')
 set_option('display.width', 3000)
 set_option('display.max_colwidth', 1000)
+
+engine = sqlalchemy.create_engine('sqlite:///acc.db')
 
 class Parsuj:
     def __init__(self):
@@ -219,6 +220,12 @@ def graf():
     except Exception as e:
         print('bokeh: ', e)
 
+
+def ftpupload(ok):
+    if ok == True:
+        accftp.upload()
+
+
 # jednak wszystko w jednym pliku, ta klasa parsuje plik logfile
 Parsuj()
 
@@ -235,5 +242,9 @@ wyswietl(wszyscy)
 
 # tworzenie grafów
 # graf()
+
+
+# upload na dhosting
+ftpupload(True)
 
 print('GOTOWE')
