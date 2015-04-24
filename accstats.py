@@ -22,6 +22,7 @@ from pandas import *  # do gryzienia danych
 from bdateutil import *  # dokładne przeliczenia na datach, lepsze od zwykłego dateutil
 import os, glob, time  # , datetime, re
 import sqlalchemy
+import shutil
 from bokeh.plotting import figure, output_file, show, VBox
 import accftp
 # import numpy as np  # do gryzienia danych, panda tez to importuje
@@ -40,6 +41,7 @@ class Parsuj:
         file = self.findfile()
         for x in file:
             self.parserlogfile(x)
+        self.bazacleanup()
 
     # zmienia folder
     # może ścieżka jako argument? /kiedyś
@@ -63,6 +65,16 @@ class Parsuj:
         unikalne.sort()
         return unikalne
 
+    def bazacleanup(self):
+        try:
+            data = read_sql_table('stats', engine)
+            data.drop_duplicates(subset='dlugosc_misji', inplace=True)
+            data.sort(columns=['data', 'ilosc_graczy'], inplace=True)
+            del data['index']
+            data.to_sql('stats', engine, if_exists='replace')
+        except Exception as e:
+            print('blad w bazacleanup...  ', e)
+
     def zapiszdosql(self, data):
         data.to_sql('stats', engine, if_exists='append')
 
@@ -84,6 +96,7 @@ class Parsuj:
                                       'ilosc_graczy',
                                       'lista_graczy'])
         if (ilosc > 4) and (dlugosc_misji > 300):
+            # print("Dopisuje do bazy danych:\n",dane)
             self.zapiszdosql(dane)
 
     # parser danych z logfile
@@ -144,39 +157,30 @@ class Parsuj:
         self.dodataframe(data, nazwa_misji, mapa, dlugosc_misji, ilosc, lista_graczy)
 
 
-def print_full(x):
-    set_option('display.max_rows', len(x))
-    print(x)
-    reset_option('display.max_rows')
-
-def bazacleanup():
-    try:
-        data = read_sql_table('stats', engine)
-        data.drop_duplicates(subset='dlugosc_misji', inplace=True)
-        data.sort(columns=['data', 'ilosc_graczy'], inplace=True)
-        del data['index']
-        data.to_sql('stats', engine, if_exists='replace')
-    except Exception as e:
-        print('blad w bazacleanup...  ', e)
-
-
-# tworzy tabelę pokazującą, kiedy danych gracz był na misji
+# tworzy tabele graczy
 def wyswietl(name):
+    data = read_sql_table('stats', engine)
+    data.drop_duplicates(subset='data', take_last=True, inplace=True)
+    del data['index']
     for x in name:
-        data = read_sql_table('stats', engine)
-        data.drop_duplicates(subset='data', take_last=True, inplace=True)
+        z = x
         x = x.lower()
-        data = data[data['lista_graczy'].str.lower().str.contains(x)]
-        del data['index']
+        gracz = data[data['lista_graczy'].str.lower().str.contains(x)]
         htmlf = '<head><meta charset="UTF-8"></head> \n'
-        htmlf += '<font size="6">'+x+' wzial udzial w '+str(data.count()[1])+' rozgrywkach.\n\n<br><br></font>'
-        htmlf += data.to_html(index=False)
+        htmlf += '<font size="6">'+z+' wzial udzial w '+str(data.count()[1])+' rozgrywkach.\n\n<br><br></font>'
+        htmlf += gracz.to_html(index=False)
         with open('html/'+x+'.html', mode='w', encoding='utf-8') as file:
             # print('tworze plik '+x+'.html')
             file.write(htmlf)
 
+    htmlf = '<head><meta charset="UTF-8"></head> \n'
+    htmlf += '<font size="4">Baza przeprowadzonych misji:<br><br></font>'
+    htmlf += data.to_html(index=False)
+    with open('html/_misje.html', mode='w', encoding='utf-8') as file:
+        file.write(htmlf)
 
-def wyswietl_wszystkich():
+
+def lista_graczy():
     data = read_sql_table('stats', engine)
     data.drop_duplicates(subset='data', take_last=True, inplace=True)
     names = []
@@ -190,10 +194,16 @@ def wyswietl_wszystkich():
                  'ilosc': len(gracz.index)}
         df_gracze = df_gracze.append(gracz, ignore_index=True)
     df_gracze = df_gracze.sort(columns=['gracz'], ascending=True)
-    # for x in df_gracze.index:
-    #     print('[m=', df_gracze.loc[x][0], ']', ' wzial udzial w ', int(df_gracze.loc[x][1]), ' rozgrywkach.', sep='')
 
-    #print(df_gracze['gracz'])
+    htmlf = '<head><meta charset="UTF-8"></head> \n'
+    htmlf += '<font size="3">' \
+             'Gracze posortowani alfabetycznie. <br>' \
+             'Ilość rozgrywek liczona od wprowadzenia nowego systemu rang (27.03.2015)' \
+             '<br><br></font>'
+    htmlf += df_gracze.to_html(index=False)
+    with open('html/_all.html', mode='w', encoding='utf-8') as file:
+        file.write(htmlf)
+
     return df_gracze['gracz']
 
 
@@ -220,22 +230,28 @@ def graf():
         print('bokeh: ', e)
 
 
+def czysc_katalog():
+    shutil.rmtree('html', ignore_errors=True)
+    os.mkdir('html')
+
+
 def ftpupload(ok):
     if ok:
         accftp.upload()
 
 
-# jednak wszystko w jednym pliku, ta klasa parsuje plik logfile
+# czysci katalog html
+czysc_katalog()
+
+# Parsuje logfile i zapisuje do sql
 Parsuj()
 
-# cleanup bazy danych
-bazacleanup()
+# tworzy liste graczy z iloscia rozegranych misji
+# zwraca liste nickow graczy
+wszyscy = lista_graczy()
 
-# wyswietla wszystkich graczy z bazy oraz ilosc rozgrywek w ktorych wzieli udzial
-wszyscy = wyswietl_wszystkich()
-
-# ta klasa bedzie zawierala wyswietlanie wynikow wedlug kryteriow
-# jako parametr należy podać nick gracza
+# wyswietlanie wynikow wedlug kryteriow
+# jako parametr należy podać nick gracza (lub wszystkie jako listę)
 wyswietl(wszyscy)
 
 
