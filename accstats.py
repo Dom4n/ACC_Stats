@@ -167,7 +167,7 @@ def wyswietl(name):
         x = x.lower()
         gracz = data[data['lista_graczy'].str.lower().str.contains(x)]
         htmlf = '<head><meta charset="UTF-8"></head> \n'
-        htmlf += '<font size="6">'+z+' wzial udzial w '+str(data.count()[1])+' rozgrywkach.\n\n<br><br></font>'
+        htmlf += '<font size="6">'+z+' wzial udzial w '+str(gracz.count()[0])+' rozgrywkach.\n\n<br><br></font>'
         htmlf += gracz.to_html(index=False)
         with open('html/'+x+'.html', mode='w', encoding='utf-8') as file:
             # print('tworze plik '+x+'.html')
@@ -198,7 +198,8 @@ def lista_graczy():
     htmlf = '<head><meta charset="UTF-8"></head> \n'
     htmlf += '<font size="3">' \
              'Gracze posortowani alfabetycznie. <br>' \
-             'Ilość rozgrywek liczona od wprowadzenia nowego systemu rang (27.03.2015)' \
+             'Ilość rozgrywek liczona od wprowadzenia nowego systemu rang (27.03.2015)<br>' \
+             'Ostatnia aktualizacja: '+time.strftime('%x')+ \
              '<br><br></font>'
     htmlf += df_gracze.to_html(index=False)
     with open('html/_all.html', mode='w', encoding='utf-8') as file:
