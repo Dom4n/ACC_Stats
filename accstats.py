@@ -49,7 +49,7 @@ class Parsuj:
     # szuka zgodnego pliku
     # zazwyczaj plik ma datę o jeden dzień w przód!!
     def findfile(self):
-        log = glob.glob('logfile_console*.log')
+        log = glob.glob('logfile_console*')
         if len(log) == 0:
             raise FileNotFoundError('BRAK PLIKU!')
         return log
@@ -104,7 +104,6 @@ class Parsuj:
         data = t
         nazwa_misji = ''
         ilosc = 0
-
         for line in plik:
 
             if 'Mission read' in line:
@@ -173,7 +172,7 @@ def wyswietl(name):
         htmlf += '<font size="6">'+x+' wzial udzial w '+str(data.count()[1])+' rozgrywkach.\n\n<br><br></font>'
         htmlf += data.to_html(index=False)
         with open('html/'+x+'.html', mode='w', encoding='utf-8') as file:
-            print('tworze plik '+x+'.html')
+            # print('tworze plik '+x+'.html')
             file.write(htmlf)
 
 
@@ -191,8 +190,8 @@ def wyswietl_wszystkich():
                  'ilosc': len(gracz.index)}
         df_gracze = df_gracze.append(gracz, ignore_index=True)
     df_gracze = df_gracze.sort(columns=['gracz'], ascending=True)
-    for x in df_gracze.index:
-        print('[m=', df_gracze.loc[x][0], ']', ' wzial udzial w ', int(df_gracze.loc[x][1]), ' rozgrywkach.', sep='')
+    # for x in df_gracze.index:
+    #     print('[m=', df_gracze.loc[x][0], ']', ' wzial udzial w ', int(df_gracze.loc[x][1]), ' rozgrywkach.', sep='')
 
     #print(df_gracze['gracz'])
     return df_gracze['gracz']

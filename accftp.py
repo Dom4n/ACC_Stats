@@ -24,7 +24,7 @@ def upload():
                 print('upload pliku: '+x+' NIEUDANY!!!!')
                 nieudane.append(x)
 
-    if len(nieudane) == 0:
+    if len(nieudane) > 0:
         print('Nieprzeslane pliki:\n'+str(nieudane))
     else:
         print('Wszystkie pliki przeslane!')
