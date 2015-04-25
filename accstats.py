@@ -76,6 +76,7 @@ class Parsuj:
             print('blad w bazacleanup...  ', e)
 
     def zapiszdosql(self, data):
+        print(data)
         data.to_sql('stats', engine, if_exists='append')
 
     def dodataframe(self, data, nazwa_misji, mapa, dlugosc_misji, ilosc, lista_graczy):
@@ -233,12 +234,6 @@ def graf():
 
 def czysc_katalog():
     shutil.rmtree('html', ignore_errors=True)
-    os.mkdir('html')
-
-
-def ftpupload(ok):
-    if ok:
-        accftp.upload()
 
 
 # czysci katalog html
@@ -255,12 +250,10 @@ wszyscy = lista_graczy()
 # jako parametr należy podać nick gracza (lub wszystkie jako listę)
 wyswietl(wszyscy)
 
-
 # tworzenie grafów
 # graf()
 
-
 # upload na dhosting
-ftpupload(True)
+accftp.upload()
 
 print('GOTOWE')
