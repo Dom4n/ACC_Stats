@@ -31,12 +31,14 @@ import accftp
 set_option('display.width', 3000)
 set_option('display.max_colwidth', 1000)
 
+directory = 'F:/LOGS'
+directory_html = 'F:/LOGS/html'
+directory_archiwum = 'F:/LOGS/PROD/'
+
 engine = sqlalchemy.create_engine('sqlite:///acc.db')
 
 class Parsuj:
     def __init__(self):
-        directory = 'F:/LOGS'
-        # directory = 'F:/LOGS/STARE/20150302'
         self.changedir(directory)
         file = self.findfile()
         for x in file:
@@ -232,12 +234,21 @@ def graf():
         print('bokeh: ', e)
 
 
-def czysc_katalog():
-    shutil.rmtree('html', ignore_errors=True)
+def czysc_katalog(dir):
+    shutil.rmtree(dir, ignore_errors=True)
+
+def archiwizuj():
+    os.chdir(directory)
+    log = glob.glob('logfile_console*')
+    for _ in log:
+        shutil.move(_, directory_archiwum+_)
+    shutil.make_archive('PROD'+str(time.strftime('%Y%m%d')), 'zip', directory, directory_archiwum)
+    czysc_katalog(directory_archiwum)
+
 
 
 # czysci katalog html
-czysc_katalog()
+czysc_katalog('html')
 
 # Parsuje logfile i zapisuje do sql
 Parsuj()
@@ -255,5 +266,9 @@ wyswietl(wszyscy)
 
 # upload na dhosting
 accftp.upload()
+
+# archiwizowanie logów
+archiwizuj()
+
 
 print('GOTOWE')

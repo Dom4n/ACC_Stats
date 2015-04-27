@@ -23,12 +23,15 @@ def upload():
 
     with ftputil.FTPHost(s.ftp_host, s.ftp_login, s.ftp_pass) as ftp_host:
         for x in pliki:
-            isok = ftp_host.upload_if_newer(x, ftp_host.curdir+'/all/'+x)
-            if isok:
-                print('upload pliku: '+x+' zakonczony powodzeniem')
-            else:
-                print('upload pliku: '+x+' NIEUDANY!!!!')
-                nieudane.append(x)
+            try:
+                isok = ftp_host.upload_if_newer(x, ftp_host.curdir+'/all/'+x)
+                if isok:
+                    print('upload pliku: '+x+' zakonczony powodzeniem')
+                else:
+                    print('upload pliku: '+x+' NIEUDANY!!!!')
+                    nieudane.append(x)
+            except Exception as e:
+                print('nieudane przeslanie pliku: '+x)
 
     if len(nieudane) > 0:
         print('Nieprzeslane pliki:\n'+str(nieudane))
